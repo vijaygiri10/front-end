@@ -18,18 +18,22 @@ import purple from '@material-ui/core/colors/purple'
 import green from '@material-ui/core/colors/green'
 import fetch from 'isomorphic-fetch'
 import createBlogPost from './sendRegisterData'
+
 const theme = createMuiTheme({
   palette: {
     primary: purple,
     secondary: green
   },
   status: {
-    danger: 'orange'
+    danger: 'red'
+  },
+  typography: {
+    useNextVariants: true
   }
 
 })
 
-const styles = theme => ({
+const styles = {
   main: {
     width: 'auto',
     display: 'block', // Fix IE 11 issue.
@@ -72,8 +76,17 @@ const styles = theme => ({
   submit: {
     marginTop: theme.spacing.unit * 3
   }
-})
+}
 
+function checkStatus (res) {
+  if (res.status >= 200 && res.status < 300) {
+    return res
+  } else {
+    let err = new Error(res.statusText)
+    err.response = res
+    throw err
+  }
+}
 // function Registor (props) {
 class Registor extends React.Component {
   // const { classes } = props
@@ -81,16 +94,48 @@ class Registor extends React.Component {
   constructor () {
     super()
     this.handleSubmit = this.handleSubmit.bind(this)
+    this.handleChange = this.handleChange.bind(this)
+    this.state = {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: ''
+    }
+  }
+
+  handleChange (e) {
+    this.setState(
+      {
+        [e.target.name]: e.target.value
+      }
+    )
   }
 
   handleSubmit (event) {
     event.preventDefault()
-    const data = new FormData(event.target)
+    const form = {
+      name: this.state.firstName,
+      lastName: this.state.lastName,
+      email: this.state.email,
+      password: this.state.password
+    }
 
-    fetch('http://127.0.0.1:8000/login', {
-      method: 'POST',
-      body: data
+    this.setState({
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: ''
     })
+    fetch('http://127.0.0.1:8000/login', {
+      body: JSON.stringify(form),
+      form: form,
+      method: 'post',
+      timeout: 5000,
+      headers: {
+        'Accept': 'application/json'
+      }
+    }
+    ).then(checkStatus)
   }
 
   render () {
@@ -105,7 +150,7 @@ class Registor extends React.Component {
           <Typography component='h1' variant='h5'>
           Register
           </Typography>
-          <form className={styles.form} onSubmit={this.handleSubmit}>
+          <form className={styles.form} onSubmit={this.handleSubmit} onChange={this.handleChange}>
             <FormControl margin='normal' required fullWidth>
               <InputLabel htmlFor='firstName'>First Name</InputLabel>
               <Input id='firstName' name='firstName' autoComplete='firstName' autoFocus />
@@ -114,26 +159,12 @@ class Registor extends React.Component {
               <InputLabel htmlFor='lastName'>Last Name</InputLabel>
               <Input id='lastName' name='lastName' autoComplete='lastName' autoFocus />
             </FormControl>
-            <FormControl margin='normal' required>
-              <TextField
-                id='date'
-                label='Birthday'
-                type='date'
-                InputLabelProps={{
-                  shrink: true
-                }}
-              />
-            </FormControl>
             <FormControl margin='normal' required fullWidth>
               <InputLabel htmlFor='email'>Email Address</InputLabel>
               <Input id='email' name='email' autoComplete='email' autoFocus />
             </FormControl>
             <FormControl margin='normal' required fullWidth>
               <InputLabel htmlFor='password'>Password</InputLabel>
-              <Input name='password' type='password' id='password' autoComplete='current-password' />
-            </FormControl>
-            <FormControl margin='normal' required fullWidth>
-              <InputLabel htmlFor='password'>Confirm Password</InputLabel>
               <Input name='password' type='password' id='password' autoComplete='current-password' />
             </FormControl>
             <FormControlLabel
@@ -156,9 +187,10 @@ class Registor extends React.Component {
     )
   }
 }
-
+/*
 Registor.propTypes = {
   classes: PropTypes.object.isRequired
 }
-
+*/
 export default withStyles(styles)(Registor)
+// export default Registor
